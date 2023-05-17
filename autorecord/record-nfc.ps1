@@ -63,7 +63,7 @@ $FullOutputDirectory = $OutputDirectory + "\" + $StartPMAt.ToString("yyyy") + "\
 New-item $FullOutputDirectory -ItemType Directory -force
 Write-Host -ForegroundColor Green "Outputting to" $FullOutputDirectory
 
-$PMFilename = $FullOutputDirectory + "\NFC-" + $StartPMAt.ToString("yyyy-MM-dd-HHmm")
+$PMFilename = $FullOutputDirectory + "\4414-Fessenden-St-NW-Washington-DC-NFC-" + $StartPMAt.ToString("yyyy-MM-dd-HHmmzz00")
 if ($Test) { $PMRecordTime = "00:00:02" }
 else {
   $PMRecordTime = ($StartAMAt - (Get-Date)).ToString("hh\:mm\:ss") # Establish the amount of time until midnight so your PM recording will stop then and your AM recording can begin at midnight.
@@ -83,7 +83,7 @@ else {
   $AMRecordTime = ($StopRecord - (Get-Date)).ToString("hh\:mm\:ss") # Establish the amount of time to record until the the offset before sunrise.
 }
 
-$AMFilename = $FullOutputDirectory + "\NFC-" + $StartAMAt.ToString("yyyy-MM-dd HHmm")
+$AMFilename = $FullOutputDirectory + "\4414-Fessenden-St-NW-Washington-DC-NFC-" + $StartAMAt.ToString("yyyy-MM-dd HHmmzz00")
 
 Write-Host -ForegroundColor Green "Starting AM Recording:" (Get-Date -Format "yyyy-MM-dd HH:mm:ss") "Record Time:" $AMRecordTime $AMFilename
 
@@ -115,29 +115,40 @@ if ($RunBirdVoxDetect) {
 
 ########################################### Convert to FLAC ###########################################
 
-If ($FIletype -eq "WAV") {
+If ($Filetype -eq "wav") {
+  Write-Host -ForegroundColor Yellow "Converting to FLAC..."
   #Convert WAVs to FLAC for reduced storage.
-  $OkToDeleteWavs = True
+  $OkToDeleteWavs = $True
   & "C:\Program Files (x86)\sox-14-4-2\sox.exe" ($PMFilename + "." + $Filetype) ($PMFilename + "." + "flac")
   if ($LastExitCode -ne 0) {
-    $OkToDeleteWavs = False
+    Write-Host -ForegroundColor Yellow "Could not find flac, $LastExitCode"
+    $OkToDeleteWavs = $False
   }
   & "C:\Program Files (x86)\sox-14-4-2\sox.exe" ($AMFilename + "." + $Filetype) ($AMFilename + "." + "flac")
   if ($LastExitCode -ne 0) {
-    $OkToDeleteWavs = False
+    Write-Host -ForegroundColor Yellow "Could not find $AMFilename flac, $LastExitCode"
+    $OkToDeleteWavs = $False
   }
 
   if ($OkToDeleteWavs) {
-    If ((Test-Path ($PMFilename + "." + "flac")) -and (Test-Path ($PMFilename + "." + "flac"))) {
+    If ((Test-Path ($PMFilename + "." + "flac")) -and (Test-Path ($AMFilename + "." + "flac"))) {
       Remove-Item ($PMFilename + "." + $Filetype)
       Remove-Item ($AMFilename + "." + $Filetype)
     }
     else {
       Write-Warning "Did not find converted flac files... Leaving original recordings."
     }
+  } else {
+    Write-Host -ForegroundColor Yellow "not ok to delete wavs"
   }
 }
 
+$CloudStorageDirectory = "C:\Users\scott\Box\Stafford_Scott\recordings\long"
+# $OutputDirectory + "\" + $StartPMAt.ToString("yyyy") + "\" + $StartPMAt.ToString("yyyy-MM-dd")
+New-item $CloudStorageDirectory -ItemType Directory -force
+
+Write-Host -ForegroundColor Yellow "Copying $FullOutputDirectory to $CloudStorageDirectory..."
+Copy-Item -Path $FullOutputDirectory -Destination $CloudStorageDirectory -Recurse
 
 If ($PauseForInput) {
   #Use if you are running from Task Scheduler and want the window to remain open after completion.
