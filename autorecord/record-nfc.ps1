@@ -91,7 +91,7 @@ Write-Host -ForegroundColor Green "Starting AM Recording:" (Get-Date -Format "yy
 
 Write-Host -ForegroundColor Green "Recording Complete:" (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
 
-$RunBirdVoxDetect = false
+$RunBirdVoxDetect = $false
 if ($RunBirdVoxDetect) {
   ########################################### BirdVoxDetect ###########################################
   $birdvoxParam = @('-m',
@@ -112,6 +112,43 @@ if ($RunBirdVoxDetect) {
   Process-Detections -NFCPath (".\" + $AMFilename + "_clips")
 }
 
+
+$RunNighthawk = $true
+if ($RunNighthawk) {
+  ########################################### BirdVoxDetect ###########################################
+  $birdvoxParam = @(
+    '--audacity-output',
+    ($PMFilename + "." + "$Filetype"),
+    ($AMFilename + "." + "$Filetype")
+  )
+
+  & nighthawk $birdvoxParam
+}
+
+$RunGetsnips = $true
+if ($RunGetsnips) {
+  ########################################### BirdVoxDetect ###########################################
+  $birdvoxParam = @(
+    '..\nfc-processing\getsnips.py',
+    'clip',
+    ('-i ' + $PMFilename + "." + "$Filetype")
+  )
+  & C:\Windows\py.exe $birdvoxParam
+
+  $birdvoxParam = @(
+    '..\nfc-processing\getsnips.py',
+    'clip',
+    ('-i ' + $AMFilename + "." + "$Filetype")
+  )
+  & C:\Windows\py.exe $birdvoxParam
+
+  $birdvoxParam = @(
+    '..\nfc-processing\getsnips.py',
+    'spec',
+    ($FullOutputDirectory + "\clips\*.wav")
+  )
+  & C:\Windows\py.exe $birdvoxParam
+}
 
 ########################################### Convert to FLAC ###########################################
 
